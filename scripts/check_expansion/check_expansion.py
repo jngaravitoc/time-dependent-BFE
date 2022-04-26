@@ -59,8 +59,8 @@ def density_profile(S, T, rmin, rmax, m, rs, snapshot):
 
 
 if __name__ == "__main__":
-    coefficients = "/mnt/home/nico/projects/bfe_computation/examples/runing_pipeline/BFE_LMC5_grav_MO3_ssc_COM_n20_10_host_snap_000"
-    snapshot = "/mnt/home/nico/ceph/HQ_iso_halo/iso_softening_100pc_grav_MO3/LMC5_15M_vir_eps_100pc_ics2_grav_MO3_000.hdf5"
+    coefficients = "/mnt/home/nico/projects/time-dependent-BFE/data/expansion/MW2_100M_beta1_vir_OM3_G4/BFE_MW_grav_MO3_ssc_COM_host_snap_000"
+    snapshot = "/mnt/home/nico/ceph/MWLMC_sims/ICs/MW/MO3/MW2_100M_beta1_vir_OM3_G4_000.hdf5"
     expansion = bfe.ios.read_coefficients(coefficients)
     S, T = expansion[0]
     hist_coefficients(S[:,:,0])
