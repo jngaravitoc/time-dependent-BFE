@@ -1,0 +1,31 @@
+---
+inpath : "/mnt/home/nico/ceph/MWLMC_sims/MWLMC/MWLMC5_b0/"
+snapname : "MWLMC5_100M_beta0_vir_OM5_G4"
+outpath : "/mnt/home/nico/projects/bfe_computation/examples/runing_pipeline/"
+outname : "BFE_MWLMC5_grav_MO5_ss_COM_n20_20"
+npartHalo : 100000000
+samplePart : 1000000
+nmax : 20
+lmax : 20
+mmax : 20
+rs : 40.85 
+ncores : 32
+mpi : 1
+rhaloCut : 500
+initSnap : 0
+finalSnap : 1
+SatBFE : 1
+Satrs : 20
+nmaxSat : 20
+lmaxSat : 20
+mmaxSat : 20
+HostBFE : 1
+SatBoundParticles : 0
+HostSatUnboundPart : 0
+WriteSnapsAscii : 0
+OutIdsBoundUnbound : 0
+PlotScatterSample : 0 
+samplePartSat : 0
+snapformat : 3
+...
+
