@@ -30,13 +30,13 @@ def read_coefficients(filename):
     if 'var_Snlm' in hf.keys():
         var_Snlm = np.array(hf.get('var_Snlm'))
         coefficients.append(var_Snlm)
-    elif 'var_Tnlm' in hf.keys():
+    if 'var_Tnlm' in hf.keys():
         var_Tnlm = np.array(hf.get('var_Tnlm'))
         coefficients.append(var_Tnlm)
-    elif 'var_STnlm' in hf.keys():
+    if 'var_STnlm' in hf.keys():
         var_STnlm = np.array(hf.get('var_STnlm'))
         coefficients.append(var_STnlm)
-
+        
     hf.close()
 
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rcom
@@ -83,7 +83,7 @@ class SCF_coeff:
             self.Svarshape = np.shape(self.Snlm_var)
             self.Tvarshape = np.shape(self.Tnlm_var)
             self.STvarshape = np.shape(self.STnlm_var)
-            assert self.shape == self.Tshape == self.Svarshape == self.Tvarshape == self.STvarshape
+            assert self.Sshape == self.Tshape == self.Svarshape == self.Tvarshape == self.STvarshape
 
         else :
             raise ValueError("coefficients elements should be 2 (Snlm, Tnlm) or 5 (Snlm, Tnlm, STnlm_var, TSnlm_var, STnlm_var)")
@@ -113,11 +113,30 @@ class SCF_coeff:
         return S_mean, T_mean 
 
 
+    def smoothing(self, S, T, varS, varT):
+        """
+        Computes optimal smoothing following Eq.8 in Weinberg+96.
+        
+        returns:
+        --------
+        
+        bs
+        bt : 
+        """
+        bs = 1 / (1 + (varS/S**2))
+        bt = 1 / (1 + (varT/T**2))
+        if S == 0:
+            bs=0
+        if T == 0:
+            bt=0
+        return bs, bt
+
     def covariance_matrix(self, S, T, Svar, Tvar, STvar, pmass):
         """
 
         """
         cov_matrix = np.zeros((2,2))
+        print("here", Svar, pmass, S)
         cov_matrix[0][0] = Svar - pmass*S**2
         cov_matrix[0][1] = STvar - pmass*S*T
         cov_matrix[1][1] = Tvar - pmass*T**2
@@ -126,7 +145,7 @@ class SCF_coeff:
         return cov_matrix
         
         
-    def smoothing_coeff_uncorrelated(self, pmass, sn=0, verb=False, sn_out=0):
+    def smoothing_coeff_uncorrelated(self, S, T, Svar, Tvar, STvar, pmass, sn=0, verb=False, sn_out=0):
 
         #build matrix
         cov_matrix = self.covariance_matrix(S, T, Svar, Tvar, STvar, pmass)
@@ -143,7 +162,7 @@ class SCF_coeff:
         ## uncorrelated coefficients
         coeff_base = np.array([S, T])
         S_unc, T_unc = np.dot(T_rot, coeff_base)
-        b_S_unc, b_T_unc = smoothing(S_unc, T_unc, varS, varT)
+        b_S_unc, b_T_unc = self.smoothing(S_unc, T_unc, varS, varT)
         S_unc_smooth = S_unc*b_S_unc
         T_unc_smooth = T_unc*b_T_unc
         SN_coeff_unc = (S_unc**2/varS)**0.5
@@ -169,12 +188,11 @@ class SCF_coeff:
 
         
     def smooth_coeff(self, S, T, Svar, Tvar, STvar, pmass, verb=False, sn=0, sn_out=0):
-        cov_matrix = covariance_matrix_builder(S, T, Svar, Tvar, STvar, pmass)
         if sn_out==0:
-            S_smooth, T_smooth, n_coeff = smoothing_coeff_uncorrelated(cov_matrix, S, T, sn, verb, sn_out)
+            S_smooth, T_smooth, n_coeff = self.smoothing_coeff_uncorrelated(S, T, Svar, Tvar, STvar, pmass, sn, verb, sn_out)
             return S_smooth, T_smooth, n_coeff
         elif sn_out == 1:
-            S_smooth, T_smooth, n_coeff, sn_coeff  = smoothing_coeff_uncorrelated(cov_matrix, S, T, sn, verb, sn_out)
+            S_smooth, T_smooth, n_coeff, sn_coeff =  self.moothing_coeff_uncorrelated(S, T, Svar, Tvar, STvar, pmass, sn, verb, sn_out)
             return S_smooth, T_smooth, n_coeff, sn_coeff
 
     def smooth_coeff_matrix(self, pmass, sn, sn_out=False):

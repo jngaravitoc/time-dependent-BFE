@@ -4,7 +4,7 @@ import scf_utils
 
 if __name__ == "__main__":
     # READ coefficients test
-    coeff_filename = "./BFE_MWLMC5_grav_MO5_ss_COM_n20_20_nsamp_1e6_host_snap_000"
+    coeff_filename = "./BFE_MWLMC5_grav_MO5_ss_COM_n20_20_nsamp_1e6_host_snap_207"
     coefficients = scf_utils.read_coefficients(coeff_filename)
     print(len(coefficients[0]))
     print(coefficients[1])
