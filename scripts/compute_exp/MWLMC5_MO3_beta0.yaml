@@ -1,0 +1,32 @@
+---
+inpath : "/mnt/home/nico/ceph/gadget_runs/MWLMC/MWLMC5/out/"
+snapname : "MWLMC5_100M_b0_vir_OM3_G4"
+outpath : "/mnt/home/nico/ceph/projects/time-dependent-BFE/scripts/compute_exp/"
+outname : "BFE_LMC5_all_grav_MO5_ss_COM_n20_20_nsamp_1e6"
+npartHalo : 100000000
+samplePart : 1000000
+nmax : 20
+lmax : 20
+mmax : 20
+rs : 40.85 
+ncores : 32
+mpi : 1
+rhaloCut : 500
+initSnap : 0
+finalSnap : 200
+SatBFE : 1
+Satrs : 20
+nmaxSat : 20
+lmaxSat : 20
+mmaxSat : 20
+HostBFE : 0
+SatBoundParticles : 0
+HostSatUnboundPart : 0
+WriteSnapsAscii : 0
+OutIdsBoundUnbound : 0
+PlotScatterSample : 0 
+samplePartSat : 0
+snapformat : 3
+variance : True
+...
+
