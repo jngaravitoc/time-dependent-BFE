@@ -47,6 +47,9 @@ def array_coefficients(filename, init_snap, final_snap):
     nmax = first_scf[1][0]
     lmax = first_scf[1][1]
     mmax = first_scf[1][2]
+    rs = first_scf[2][0]
+    pmass = first_scf[2][1]
+    G = first_scf[2][2]
     rj_array = np.zeros((final_snap - init_snap, 3))
     Sjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
     Tjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
@@ -56,7 +59,7 @@ def array_coefficients(filename, init_snap, final_snap):
         Tjnlm_array[k-init_snap] = coeff_all[0][1]
         #print(type(coeff_all[3][0]))
         rj_array[k-init_snap] = np.array(coeff_all[3][0])
-    return Sjnlm_array, Tjnlm_array, rj_array
+    return Sjnlm_array, Tjnlm_array, rj_array, [rs, pmass, G]
 
 ## Reading coefficients
 def reshape_matrix(matrix):
