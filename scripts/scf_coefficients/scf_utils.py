@@ -8,14 +8,15 @@ import h5py
 
 from numpy import linalg
 
-def read_coefficients(filename):
+def read_coefficients(filename, verbose=False):
     """
     Read cefficients into an hdf5 file
 
     """
     hf=h5py.File(filename + ".hdf5", 'r')
-    print(hf.keys())
-    print("* Loading coefficients")
+    if verbose==True:
+        print(hf.keys())
+        print("* Loading coefficients")
 
     Snlm = np.array(hf.get('Snlm'))
     Tnlm = np.array(hf.get('Tnlm'))
