@@ -5,7 +5,7 @@ Various routines to work with SCF coefficients
 
 import numpy as np
 import h5py
-
+from scipy import special
 from numpy import linalg
 
 def read_coefficients(filename, verbose=False):
@@ -132,10 +132,8 @@ class SCF_coeff:
         self.nmax = nmax
         self.lmax = lmax
         self.mmax = mmax
-        
-        
-
-
+       
+ 
     def mean_coeff():
         """
         Compute the mean of the coefficients from multiple files and return the mean values.
@@ -268,4 +266,41 @@ class SCF_coeff:
         
         elif sn_out == 1:
             return S_matrix_smooth, T_matrix_smooth, n_coefficients, SN_coeff
-     
+          
+    def Anl(n, l):
+        knl = 0.5*n*(n+4*l+3) + (l+1)*(2*l+1)
+        A_nl = - 2**(8*l+6)/(4*np.pi*knl) * (special.factorial(n)*(n+2*l+3/2.)*(special.gamma(2*l+3/2.))**2)/(special.gamma(n+4*l+3))
+        return A_nl
+
+    def Anl_array(nmax, lmax):
+        A_nl_array = np.zeros((nmax, lmax))
+        for j in range(nmax):
+            for i in range(lmax):
+                A_nl_array[j][i] = Anl(j, i)
+        return A_nl_array
+
+    def coeff_energy(ax, S, T, m, nmax, lmax, vmin, vmax):
+        A_nl = Anl_array(nmax, lmax)
+        A = (S[:,:,m]**2 + T[:,:,m]**2)
+        im = ax.imshow(np.log10(np.abs(A/A_nl)).T, origin='lower', cmap='viridis', vmin=vmin, vmax=vmax)
+        #fig.colorbar()
+        return im
+
+
+    def coeff_energy_val(S, T, m, nmax, lmax):
+        A_nl = Anl_array(nmax, lmax)
+        if m==0:
+            U = (S[:,:,m]**2 + T[:,:,m]**2)/(A_nl)
+        else:
+            U = (S[:,:,m]**2 + T[:,:,m]**2)/(2*A_nl)
+        return U
+
+
+    def coeff_energy_val_n(S, T, n, nmax, lmax):
+        A_nl = Anl_array(n, lmax)
+        A = (S[n,:,:]**2 + T[n,:,:]**2)
+        A_nl_m = np.zeros((lmax, lmax))
+        for i in range(1, lmax):
+            A_nl_m[:,i] = A_nl[0]/2
+        A_nl_m[:,0] = A_nl[0]
+        return A/A_nl_m 
