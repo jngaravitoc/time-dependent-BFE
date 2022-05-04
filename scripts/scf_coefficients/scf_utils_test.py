@@ -9,7 +9,7 @@ if __name__ == "__main__":
     S_coefficients, T_coefficients, rcom = scf_utils.array_coefficients(coeff_filename, 207, 209)
     print(np.shape(S_coefficients))
     print(np.shape(T_coefficients))
-    print(np.shape(rcom))
+    pint(np.shape(rcom))
     #print(len(coefficients[0]))
     #print(coefficients[1])
     #print(coefficients[2])
