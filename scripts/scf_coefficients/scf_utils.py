@@ -43,7 +43,27 @@ def read_coefficients(filename, verbose=False):
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rcom
 
 def array_coefficients(filename, init_snap, final_snap):
+    """
+    Read coefficients from subsequent snapshots
 
+    Parameters:
+    -----------
+
+    filename:
+        base name of the coefficients
+    init_snap:
+        initial snap number
+    final_snap:
+        final snap number
+
+    Return:
+    -------
+        Sjnlm : 
+        Tjnlm : 
+        rcom : 
+        constants: 
+
+    """
     first_scf = read_coefficients(filename+"{:03d}".format(init_snap))
     nmax = first_scf[1][0]
     lmax = first_scf[1][1]
