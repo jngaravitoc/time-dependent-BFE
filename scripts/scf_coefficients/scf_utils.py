@@ -10,7 +10,7 @@ from numpy import linalg
 
 def read_coefficients(filename, verbose=False):
     """
-    Read cefficients into an hdf5 file
+    Read coefficients into an hdf5 file
 
     """
     hf=h5py.File(filename + ".hdf5", 'r')
@@ -61,7 +61,7 @@ def array_coefficients(filename, init_snap, final_snap):
         Sjnlm : 
         Tjnlm : 
         rcom : 
-        constants: 
+        constants: rs, pmass, G 
 
     """
     first_scf = read_coefficients(filename+"{:03d}".format(init_snap))
@@ -75,10 +75,9 @@ def array_coefficients(filename, init_snap, final_snap):
     Sjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
     Tjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
     for k in range(init_snap, final_snap):
-        coeff_all= read_coefficients(filename+"{:03d}".format(init_snap))
+        coeff_all= read_coefficients(filename+"{:03d}".format(k))
         Sjnlm_array[k-init_snap] = coeff_all[0][0]
         Tjnlm_array[k-init_snap] = coeff_all[0][1]
-        #print(type(coeff_all[3][0]))
         rj_array[k-init_snap] = np.array(coeff_all[3][0])
     return Sjnlm_array, Tjnlm_array, rj_array, [rs, pmass, G]
 
@@ -93,7 +92,7 @@ def reshape_matrix(matrix):
     
     counter = 0
     for n in range(self.nmax+1):
-        for l in range(self.lmax+1):
+       for l in range(self.lmax+1):
             for m in range(0, slef.lmax+1):
                 col_matrix[n][l][m] = matrix[counter]
                 counter +=1
@@ -134,7 +133,7 @@ class SCF_coeff:
         self.mmax = mmax
        
  
-    def mean_coeff():
+    def mean_coeff(self):
         """
         Compute the mean of the coefficients from multiple files and return the mean values.
         # TODO: implement mean of covariance matrix
@@ -156,7 +155,7 @@ class SCF_coeff:
         """
         Computes optimal smoothing following Eq.8 in Weinberg+96.
         
-        returns:
+        Returns:
         --------
         
         bs
@@ -174,8 +173,8 @@ class SCF_coeff:
         """
 
         """
+
         cov_matrix = np.zeros((2,2))
-        print("here", Svar, pmass, S)
         cov_matrix[0][0] = Svar - pmass*S**2
         cov_matrix[0][1] = STvar - pmass*S*T
         cov_matrix[1][1] = Tvar - pmass*T**2
@@ -267,12 +266,12 @@ class SCF_coeff:
         elif sn_out == 1:
             return S_matrix_smooth, T_matrix_smooth, n_coefficients, SN_coeff
           
-    def Anl(n, l):
+    def Anl(self, n, l):
         knl = 0.5*n*(n+4*l+3) + (l+1)*(2*l+1)
         A_nl = - 2**(8*l+6)/(4*np.pi*knl) * (special.factorial(n)*(n+2*l+3/2.)*(special.gamma(2*l+3/2.))**2)/(special.gamma(n+4*l+3))
         return A_nl
 
-    def Anl_array(nmax, lmax):
+    def Anl_array(self, nmax, lmax):
         A_nl_array = np.zeros((nmax, lmax))
         for j in range(nmax):
             for i in range(lmax):
@@ -287,7 +286,7 @@ class SCF_coeff:
         return im
 
 
-    def coeff_energy_val(S, T, m, nmax, lmax):
+    def coeff_energy_val(self, S, T, m, nmax, lmax):
         A_nl = Anl_array(nmax, lmax)
         if m==0:
             U = (S[:,:,m]**2 + T[:,:,m]**2)/(A_nl)
@@ -296,7 +295,7 @@ class SCF_coeff:
         return U
 
 
-    def coeff_energy_val_n(S, T, n, nmax, lmax):
+    def coeff_energy_val_n(self, S, T, n, nmax, lmax):
         A_nl = Anl_array(n, lmax)
         A = (S[n,:,:]**2 + T[n,:,:]**2)
         A_nl_m = np.zeros((lmax, lmax))
