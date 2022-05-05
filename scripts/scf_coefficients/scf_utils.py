@@ -5,17 +5,22 @@ Various routines to work with SCF coefficients
 
 import numpy as np
 import h5py
-
+from scipy import special
 from numpy import linalg
+import matplotlib.pyplot as plt
+import gala.potential as gp
+from astropy import units as u
+from gala.units import galactic
 
-def read_coefficients(filename):
+def read_coefficients(filename, verbose=False):
     """
-    Read cefficients into an hdf5 file
+    Read coefficients into an hdf5 file
 
     """
     hf=h5py.File(filename + ".hdf5", 'r')
-    print(hf.keys())
-    print("* Loading coefficients")
+    if verbose==True:
+        print(hf.keys())
+        print("* Loading coefficients")
 
     Snlm = np.array(hf.get('Snlm'))
     Tnlm = np.array(hf.get('Tnlm'))
@@ -41,6 +46,45 @@ def read_coefficients(filename):
 
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rcom
 
+def array_coefficients(filename, init_snap, final_snap):
+    """
+    Read coefficients from subsequent snapshots
+
+    Parameters:
+    -----------
+
+    filename:
+        base name of the coefficients
+    init_snap:
+        initial snap number
+    final_snap:
+        final snap number
+
+    Return:
+    -------
+        Sjnlm : 
+        Tjnlm : 
+        rcom : 
+        constants: rs, pmass, G 
+
+    """
+    first_scf = read_coefficients(filename+"{:03d}".format(init_snap))
+    nmax = first_scf[1][0]
+    lmax = first_scf[1][1]
+    mmax = first_scf[1][2]
+    rs = first_scf[2][0]
+    pmass = first_scf[2][1]
+    G = first_scf[2][2]
+    rj_array = np.zeros((final_snap - init_snap, 3))
+    Sjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    Tjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    for k in range(init_snap, final_snap):
+        coeff_all= read_coefficients(filename+"{:03d}".format(k))
+        Sjnlm_array[k-init_snap] = coeff_all[0][0]
+        Tjnlm_array[k-init_snap] = coeff_all[0][1]
+        rj_array[k-init_snap] = np.array(coeff_all[3][0])
+    return Sjnlm_array, Tjnlm_array, rj_array, [rs, pmass, G]
+
 ## Reading coefficients
 def reshape_matrix(matrix):
     """ 
@@ -52,7 +96,7 @@ def reshape_matrix(matrix):
     
     counter = 0
     for n in range(self.nmax+1):
-        for l in range(self.lmax+1):
+       for l in range(self.lmax+1):
             for m in range(0, slef.lmax+1):
                 col_matrix[n][l][m] = matrix[counter]
                 counter +=1
@@ -91,11 +135,9 @@ class SCF_coeff:
         self.nmax = nmax
         self.lmax = lmax
         self.mmax = mmax
-        
-        
-
-
-    def mean_coeff():
+       
+ 
+    def mean_coeff(self):
         """
         Compute the mean of the coefficients from multiple files and return the mean values.
         # TODO: implement mean of covariance matrix
@@ -117,7 +159,7 @@ class SCF_coeff:
         """
         Computes optimal smoothing following Eq.8 in Weinberg+96.
         
-        returns:
+        Returns:
         --------
         
         bs
@@ -135,8 +177,8 @@ class SCF_coeff:
         """
 
         """
+
         cov_matrix = np.zeros((2,2))
-        print("here", Svar, pmass, S)
         cov_matrix[0][0] = Svar - pmass*S**2
         cov_matrix[0][1] = STvar - pmass*S*T
         cov_matrix[1][1] = Tvar - pmass*T**2
@@ -227,4 +269,95 @@ class SCF_coeff:
         
         elif sn_out == 1:
             return S_matrix_smooth, T_matrix_smooth, n_coefficients, SN_coeff
-     
+          
+    def Anl(self, n, l):
+        knl = 0.5*n*(n+4*l+3) + (l+1)*(2*l+1)
+        A_nl = - 2**(8*l+6)/(4*np.pi*knl) * (special.factorial(n)*(n+2*l+3/2.)*(special.gamma(2*l+3/2.))**2)/(special.gamma(n+4*l+3))
+        return A_nl
+
+    def Anl_array(self, nmax, lmax):
+        A_nl_array = np.zeros((nmax, lmax))
+        for j in range(nmax):
+            for i in range(lmax):
+                A_nl_array[j][i] = Anl(j, i)
+        return A_nl_array
+
+    def coeff_energy(ax, S, T, m, nmax, lmax, vmin, vmax):
+        A_nl = Anl_array(nmax, lmax)
+        A = (S[:,:,m]**2 + T[:,:,m]**2)
+        im = ax.imshow(np.log10(np.abs(A/A_nl)).T, origin='lower', cmap='viridis', vmin=vmin, vmax=vmax)
+        #fig.colorbar()
+        return im
+
+
+    def coeff_energy_val(self, S, T, m, nmax, lmax):
+        A_nl = Anl_array(nmax, lmax)
+        if m==0:
+            U = (S[:,:,m]**2 + T[:,:,m]**2)/(A_nl)
+        else:
+            U = (S[:,:,m]**2 + T[:,:,m]**2)/(2*A_nl)
+        return U
+
+
+    def coeff_energy_val_n(self, S, T, n, nmax, lmax):
+        A_nl = Anl_array(n, lmax)
+        A = (S[n,:,:]**2 + T[n,:,:]**2)
+        A_nl_m = np.zeros((lmax, lmax))
+        for i in range(1, lmax):
+            A_nl_m[:,i] = A_nl[0]/2
+        A_nl_m[:,0] = A_nl[0]
+        return A/A_nl_m
+
+
+
+    def density_contour(self, S, T, grid_size, m, rs, snap, ngrid=128, delta_rho=False):
+        S0 = np.zeros_like(S)
+        T0 = np.zeros_like(T)
+        S0[0,0,0] = S[0,0,0]
+        T0[0,0,0] = T[0,0,0]
+        
+        circle1 = plt.Circle((0, 0), 100, color='w', fill=False, ls='--', alpha=0.7)
+
+        pot = gp.SCFPotential(m=m*u.Msun, r_s=rs*u.kpc, Snlm=S, Tnlm=T, units=galactic)
+        
+        x0 = np.linspace(grid_size[0], grid_size[1], ngrid)
+        y0 = np.linspace(grid_size[0], grid_size[1], ngrid)
+
+        #x = np.linspace(grid_size[0]-orbit[snap,1], grid_size[1]-orbit[snap,1], ngrid)
+        #y = np.linspace(grid_size[0]-orbit[snap,2], grid_size[1]-orbit[snap,2], ngrid)
+
+        x = np.linspace(grid_size[0], grid_size[1], ngrid)
+        y = np.linspace(grid_size[0], grid_size[1], ngrid)
+        
+        grid = np.meshgrid(x, y)    
+        xyz = np.zeros((3, ngrid**2))
+        xyz[1] = grid[0].flatten()
+        xyz[2] = grid[1].flatten()
+        
+        rho = pot.density(xyz)
+        #rho_0 = pot_0.density(xyz)
+
+        fig, ax = plt.subplots(1, 1, figsize=(8,8))
+        if delta_rho == False :
+            levels = np.linspace(np.min(np.log10(np.abs(rho.value))),  np.max(np.log10(np.abs(rho.value))), 20)
+            
+            ax.contourf(x0, y0, np.log10(np.abs(rho.value.reshape(ngrid, ngrid))), 20, cmap='inferno', 
+                        origin='lower', extent=[-250, 250, -250, 250])
+        elif delta_rho == True :
+            pot_0 = gp.SCFPotential(m=m*u.Msun, r_s=rs*u.kpc, Snlm=S0, Tnlm=T0, units=galactic)
+            rho_0 = pot_0.density(xyz)
+            ax.contourf(x0, y0, (rho.value/rho_0.value).reshape(128, 128)-1 , 20, cmap='inferno', 
+                        origin='lower', vmin=-0.4, vmax=0.4, extent=[-250, 250, -250, 250])
+
+        #x.scatter(orbit[snap,7], orbit[snap,8], c='w')
+        #ax.plot(orbit[:snap+1,7], orbit[:snap+1,8], lw='1.5', c='w', alpha=0.7)
+        ax.add_patch(circle1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.plot([-150, -50], [-220, -220], c='w')
+        ax.text( -150, -210, r'$\rm{100\ kpc}$', c='w', fontsize=22)
+        ax.text( -200, 220, r'$t={:0.1f}\ $Gyr'.format(snap*0.02), c='w', fontsize=22)
+
+        #plt.savefig('density_contour_{:03d}.png'.format(snap), bbox_inches='tight', dpi=300)
+        #plt.close()
+
