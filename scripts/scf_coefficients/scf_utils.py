@@ -3,8 +3,7 @@ Various routines to work with SCF coefficients
 
 TODO:
 
- - Return array of smoothed coefficients 
- - Return array of energies 
+ - Add docstrings 
 
 """
 
@@ -19,7 +18,7 @@ from gala.units import galactic
 
 def read_coefficients(filename, verbose=False):
     """
-    Read coefficients into an hdf5 file
+    Read coefficients in  hdf5 format
 
     """
     hf=h5py.File(filename + ".hdf5", 'r')
@@ -192,7 +191,7 @@ def _smooth_coefficients(S, T, Svar, Tvar, STvar, pmass, sn_threshold=0, verb=Fa
 
     
 
-def smooth_coefficients_matrix(Snlm, Tnlm, Snlm_var, Tnlm_var, STnlm_var, pmass, sn_threshold, SN=False):
+def smooth_coefficients_matrix(Snlm, Tnlm, Snlm_var, Tnlm_var, STnlm_var, pmass, verb, sn_threshold, SN=False):
     S_matrix_smooth = np.zeros_like(Snlm)
     T_matrix_smooth = np.zeros_like(Tnlm)
     SN_coeff = np.zeros_like(S_matrix_smooth)
@@ -209,8 +208,8 @@ def smooth_coefficients_matrix(Snlm, Tnlm, Snlm_var, Tnlm_var, STnlm_var, pmass,
                                                                                   pmass, verb=False, 
                                                                                   sn_threshold=sn_threshold,
                                                                                   SN=True)
-    ncoeff = np.nonzero(S_matrix_smooth)[0]
-                
+    ncoeff = len(np.nonzero(S_matrix_smooth)[0])
+                   
     if SN == False :
         return S_matrix_smooth, T_matrix_smooth, ncoeff
     
@@ -228,9 +227,9 @@ def _Anl(n, l):
     return A_nl
 
 def _Anl_array(nmax, lmax):
-    A_nl_array = np.zeros((nmax+1, lmax+1))
-    for j in range(nmax+1):
-        for i in range(lmax+1):
+    A_nl_array = np.zeros((nmax, lmax))
+    for j in range(nmax):
+        for i in range(lmax):
             A_nl_array[j][i] = _Anl(j, i)
     return A_nl_array
 
@@ -253,13 +252,16 @@ def coefficients_energy_n(S, T, n, nmax, lmax):
     A_nl_m[:,0] = A_nl[0]
     return A/A_nl_m
 
-def coefficients_energy_array(Sjnlm, Tjnlm, nmax, lmax):
+def coefficients_energy_array(Sjnlm, Tjnlm):
     Ujnlm = np.zeros_like(Sjnlm)
     nsnaps = np.shape(Sjnlm)[0]
+    nmax = np.shape(Sjnlm)[1]
+    lmax = np.shape(Sjnlm)[2]
+    mmax = np.shape(Sjnlm)[3]
+
     for k in range(nsnaps):
         Ujnlm[k] = coefficients_energy(Sjnlm[k], Tjnlm[k], nmax, lmax, mmax)
     return Ujnlm
-
 
 ## Visualization
 
@@ -299,6 +301,9 @@ class SCFvis:
         return 0
 
     def density_contour(self, S, T, grid_size, m, rs, snap, ngrid=128, delta_rho=False):
+        """
+        TODO: use self variables! 
+        """
         S0 = np.zeros_like(S)
         T0 = np.zeros_like(T)
         S0[0,0,0] = S[0,0,0]
@@ -357,7 +362,7 @@ class SCF_coeff:
     """
     def __init__(self, filename, ninit, nfinal):
         # read coefficients.
-        coefficients, exp_length, exp_params, rjcom = array_coeficients(filename,  ninit, nfinal)
+        coefficients, exp_length, exp_params, rjcom = array_coefficients(filename,  ninit, nfinal)
 
         self.Snlm = coefficients[0]
         self.Tnlm = coefficients[1]
@@ -379,6 +384,8 @@ class SCF_coeff:
         self.lmax = exp_length[1]
         self.mmax = exp_length[2]
         self.rjcom = rjcom
+        self.rs = exp_params[0]
+        self.pmass = exp_params[1]
         self.nsnaps = len(rjcom)
 
     def mean_coeff(self, variance=False):
@@ -408,7 +415,24 @@ class SCF_coeff:
         elif variance == True:
             return Sj_mean, Tj_mean, Svarj_mean, Tvarj_mean, STvarj_mean
 
-    def smooth_coefficients_array(self, pmass, sn_threshold=4, SN=False):
+    def smooth_coefficients_array(self, sn_threshold=4, SN=False):
+        """
+        Returns smoothed coefficients for an array of snapshots 
+
+        Parameters:
+        ----------
+        sn_threshold : int 
+            minimum signal-to-noise threshold value that will be use to select
+            coefficients.
+
+        Returns:
+        --------
+
+        Sjnlm_smooth
+        Tjnlm_smooth
+        N_coefficients
+
+        """
         Sjnlm_smooth = np.zeros_like(self.Snlm)
         Tjnlm_smooth = np.zeros_like(self.Tnlm)
         SN_coeff = np.zeros_like(Sjnlm_smooth)
@@ -419,15 +443,14 @@ class SCF_coeff:
                                                                                        self.Snlm_var[k], 
                                                                                        self.Tnlm_var[k],
                                                                                        self.STnlm_var[k],
-                                                                                       pmass, verb=False, 
+                                                                                       self.pmass, verb=True, 
                                                                                        sn_threshold=sn_threshold,
                                                                                        SN=True)
-                
-
-        if sn_out == False :
-            return Sjnlm_smooth, Tjnlm_smooth, n_coefficients
+            
+        if SN == False :
+            return Sjnlm_smooth, Tjnlm_smooth, Ncoeff
         
-        elif sn_out == True :
-            return Sjnlm_smooth, Tjnlm_smooth, n_coefficients, SN_coeff
+        elif SN == True :
+            return Sjnlm_smooth, Tjnlm_smooth, Ncoeff, SN_coeff
           
 
