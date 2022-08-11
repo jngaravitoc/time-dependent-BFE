@@ -51,7 +51,7 @@ def read_coefficients(filename, verbose=False):
 
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rcom
 
-def array_coefficients(filename, init_snap, final_snap):
+def array_coefficients2(filename, init_snap, final_snap):
     """
     Read coefficients from subsequent snapshots
 
@@ -99,6 +99,52 @@ def array_coefficients(filename, init_snap, final_snap):
     coefficients = [Sjnlm_array, Tjnlm_array, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rj_array
 
+   
+ def array_coefficients(filename, init_snap, final_snap):
+    """
+    Read coefficients from subsequent snapshots
+
+    Parameters:
+    -----------
+
+    filename:
+        base name of the coefficients
+    init_snap:
+        initial snap number
+    final_snap:
+        final snap number
+
+    Return:
+    -------
+        Sjnlm : 
+        Tjnlm : 
+        rcom : 
+        constants: rs, pmass, G 
+
+    """
+
+    first_scf = read_coefficients(filename+"{:03d}".format(init_snap))
+    nmax = first_scf[1][0]
+    lmax = first_scf[1][1]
+    mmax = first_scf[1][2]
+    rs = first_scf[2][0]
+    pmass = first_scf[2][1]
+    G = first_scf[2][2]
+    rj_array = np.zeros((final_snap - init_snap, 3))
+    Sjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    Tjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    #Sjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    #Tjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+    #STjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
+
+    for k in range(init_snap, final_snap):
+        coeff_all = read_coefficients(filename+"{:03d}".format(k))
+        Sjnlm_array[k-init_snap] = coeff_all[0][0]
+        Tjnlm_array[k-init_snap] = coeff_all[0][1]
+        rj_array[k-init_snap] = np.array(coeff_all[3][0])
+    coefficients = [Sjnlm_array, Tjnlm_array, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
+    return Sjnlm_array, Tjnlm_array, rj_array, rs, pmass, G
+   
 ## Reading coefficients
 def _reshape_matrix(matrix):
     """ 
