@@ -142,7 +142,7 @@ def array_coefficients(filename, init_snap, final_snap):
         Sjnlm_array[k-init_snap] = coeff_all[0][0]
         Tjnlm_array[k-init_snap] = coeff_all[0][1]
         rj_array[k-init_snap] = np.array(coeff_all[3][0])
-    coefficients = [Sjnlm_array, Tjnlm_array, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
+    #coefficients = [Sjnlm_array, Tjnlm_array, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
     return Sjnlm_array, Tjnlm_array, rj_array, [rs, pmass, G]
    
 ## Reading coefficients
