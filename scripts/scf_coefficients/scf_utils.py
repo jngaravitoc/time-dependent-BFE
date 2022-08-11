@@ -100,7 +100,7 @@ def array_coefficients2(filename, init_snap, final_snap):
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rj_array
 
    
- def array_coefficients(filename, init_snap, final_snap):
+def array_coefficients(filename, init_snap, final_snap):
     """
     Read coefficients from subsequent snapshots
 
