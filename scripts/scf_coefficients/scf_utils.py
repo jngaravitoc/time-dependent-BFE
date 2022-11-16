@@ -51,7 +51,7 @@ def read_coefficients(filename, verbose=False):
 
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rcom
 
-def array_coefficients2(filename, init_snap, final_snap):
+def array_coefficients(filename, init_snap, final_snap):
     """
     Read coefficients from subsequent snapshots
 
@@ -99,53 +99,6 @@ def array_coefficients2(filename, init_snap, final_snap):
     coefficients = [Sjnlm_array, Tjnlm_array, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
     return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rj_array
 
-   
-def array_coefficients(filename, init_snap, final_snap):
-    """
-    Read coefficients from subsequent snapshots
-
-    Parameters:
-    -----------
-
-    filename:
-        base name of the coefficients
-    init_snap:
-        initial snap number
-    final_snap:
-        final snap number
-
-    Return:
-    -------
-        Sjnlm : 
-        Tjnlm : 
-        rcom : 
-        constants: rs, pmass, G 
-
-    """
-
-    first_scf = read_coefficients(filename+"{:03d}".format(init_snap))
-    nmax = first_scf[1][0]
-    lmax = first_scf[1][1]
-    mmax = first_scf[1][2]
-    rs = first_scf[2][0]
-    pmass = first_scf[2][1]
-    G = first_scf[2][2]
-    rj_array = np.zeros((final_snap - init_snap, 3))
-    Sjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
-    Tjnlm_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
-    #Sjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
-    #Tjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
-    #STjnlm_var_array = np.zeros((final_snap - init_snap, nmax+1, lmax+1, mmax+1))
-
-    for k in range(init_snap, final_snap):
-        coeff_all = read_coefficients(filename+"{:03d}".format(k))
-        Sjnlm_array[k-init_snap] = coeff_all[0][0]
-        Tjnlm_array[k-init_snap] = coeff_all[0][1]
-        rj_array[k-init_snap] = np.array(coeff_all[3][0])
-    coefficients = [Sjnlm_array, Tjnlm_array]#, Sjnlm_var_array, Tjnlm_var_array, STjnlm_var_array]
-    return coefficients, [nmax, lmax, mmax], [rs, pmass, G], rj_array
-    #return Sjnlm_array, Tjnlm_array, rj_array, [rs, pmass, G]
-   
 ## Reading coefficients
 def _reshape_matrix(matrix):
     """ 
@@ -347,18 +300,18 @@ class SCFvis:
         cbar2 = fig.colorbar(im2, ax=ax[1])
         return 0
 
-    def density_contour(self, S, T, grid_size, m, rs, snap, ngrid=128, delta_rho=False):
+    def density_contour(self, grid_size, m, rs, snap, ngrid=128, delta_rho=False, **kwargs):
         """
         TODO: use self variables! 
         """
-        S0 = np.zeros_like(S)
-        T0 = np.zeros_like(T)
-        S0[0,0,0] = S[0,0,0]
-        T0[0,0,0] = T[0,0,0]
+        S0 = np.zeros_like(self.Snlm)
+        T0 = np.zeros_like(self.Tnlm)
+        S0[0,0,0] = self.Snlm[0,0,0]
+        T0[0,0,0] = self.Tnlm[0,0,0]
         
         circle1 = plt.Circle((0, 0), 100, color='w', fill=False, ls='--', alpha=0.7)
 
-        pot = gp.SCFPotential(m=m*u.Msun, r_s=rs*u.kpc, Snlm=S, Tnlm=T, units=galactic)
+        pot = gp.SCFPotential(m=m*u.Msun, r_s=rs*u.kpc, Snlm=self.Snlm, Tnlm=self.Tnlm, units=galactic)
         
         x0 = np.linspace(grid_size[0], grid_size[1], ngrid)
         y0 = np.linspace(grid_size[0], grid_size[1], ngrid)
@@ -394,13 +347,14 @@ class SCFvis:
         ax.add_patch(circle1)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.plot([-150, -50], [-220, -220], c='w')
-        ax.text( -150, -210, r'$\rm{100\ kpc}$', c='w', fontsize=22)
-        ax.text( -200, 220, r'$t={:0.1f}\ $Gyr'.format(snap*0.02), c='w', fontsize=22)
+        #ax.plot([grid_size[0]*0.95, grid_size[1]*0.95], [grid_size[0], grid_size[1]], c='w')
+        ax.text(grid_size[0]*0.9, grid_size[0]*0.9, r'$\rm{100\ kpc}$', c='w', fontsize=22)
+        ax.text(grid_size[0]*0.8, grid_size[0]*0.8, r'$t={:0.1f}\ $Gyr'.format(snap*0.02), c='w', fontsize=22)
 
-        #plt.savefig('density_contour_{:03d}.png'.format(snap), bbox_inches='tight', dpi=300)
-        #plt.close()
-
+        if 'figname' in kwargs.keys():
+            plt.savefig(kwargs['figname'] + '{:03d}.png'.format(snap), bbox_inches='tight', dpi=300)
+            plt.close()
+        return 0
 
 class SCF_coeff:
     """
