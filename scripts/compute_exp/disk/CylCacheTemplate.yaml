@@ -1,0 +1,54 @@
+#
+# standard parameters
+#
+# disk model parameters
+dtype    : exponential      # Spherical model type for adpative basis creation
+ASCALE   : 1.0              # Radial scale length for disk basis construction
+HSCALE   : 0.1              # Vertical scale length for disk basis construction
+
+# ouput disk basis parameters
+cachefile: .eof.cache.file  # The cache file for the cylindrical basis
+MMAX     : 10               # Maximum azimuthal order for the cylindrical basis
+NORDER   : 32               # Total number of basis functions per harmonic order
+NODD     : 6                # Number of vertically odd basis functions per harmonic order
+RCYLMIN  : 0.001            # Minimum disk radius for EmpCylSL
+RCYLMAX  : 20.0             # Maximum disk radius for EmpCylSL
+NUMX     : 256              # Size of the (mapped) cylindrical radial grid
+NUMY     : 128              # Size of the (mapped) cylindrical vertical grid
+
+# intermediate spherical basis parameters
+NUMR     : 2000             # Size of radial grid
+RNUM     : 200              # Number of radial knots for EmpCylSL basis construction quadrature
+TNUM     : 80               # Number of cos(theta) knots for EmpCylSL basis construction quadrature
+PNUM     : 1                # Number of azimthal knots for EmpCylSL basis construction quadrature
+NMAX2    : 48               # Maximum radial order for the spherical basis in adapative construction of the cylindrical basis
+LMAX2    : 48               # Maximum angular order for spherical basis in adaptive construction of the cylindrical basis
+
+
+#
+# expert parameters
+#
+# target model parameters
+expcond  : true             # Use analytic target density rather than particle distribution
+
+# basis mapping parameters
+CMAPZ    : 1                # Vertical coordinate mapping type for cylindrical grid  (0=none, 1=rational fct)
+CMAPR    : 1                # Radial coordinate mapping type for cylindrical grid  (0=none, 1=rational fct)
+ctype    : Log              # DiskHalo radial coordinate scaling type (one of: Linear, Log, Rat)
+LOGR     : true             # Logarithmic scaling for model table in EmpCylSL
+DENS     : true             # Compute and cache basis density field
+
+# diagnostics
+VFLAG    : 31               # Diagnostic flag for EmpCylSL
+NOUT     : 18               # Maximum radial order for diagnostic basis dump
+
+# model-specific advanced parameters
+deproject: EXP              # The EmpCylSL deprojection from specified disk model (EXP or MN) -- change only if using MN
+ARATIO   : 1.0              # Radial scale length ratio for disk basis construction with doubleexpon
+HRATIO   : 1.0              # Vertical scale height ratio for disk basis construction with doubleexpon
+DWEIGHT  : 1.0              # Ratio of second disk relative to the first disk for disk basis construction with double-exponential
+RWIDTH   : 0.0              # Width for erf truncation for EOF conditioning density (ignored if zero)
+ASHIFT   : 0.0              # Fraction of scale length for shift in conditioning function
+RFACTOR  : 1.0              # Disk radial scaling factor for spherical deprojection model
+RTRUNC   : 0.1              # Maximum disk radius for erf truncation of EOF conditioning density
+PPOW     : 4.0              # Power-law index for power-law disk profile
